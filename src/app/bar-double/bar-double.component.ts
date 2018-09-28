@@ -36,8 +36,8 @@ export class BarDoubleComponent implements OnInit {
   private start_max: number;
   private data: any;
 
-  private barsCountRightArrow = true;
-  private barsCountLeftArrow = false;
+  private showRightArrow = true;
+  private showLeftArrow = false;
 
   private height: number;
   private width: number;
@@ -80,6 +80,7 @@ export class BarDoubleComponent implements OnInit {
     this.x = d3Scale.scaleBand().rangeRound([0, this.width]).padding(0.1).align(0.1);
     this.y = d3Scale.scaleLinear().rangeRound([this.height, 0]);
     this.x.domain(this.data.map((d) => d[this.keyObjectArray[0]]));
+    this.allBarData = [];
     for (var individualData of this.data)
       this.allBarData.push({ "sum": individualData[this.keyObjectArray[1]][this.subKeyObjectArray[0]] + individualData[this.keyObjectArray[1]][this.subKeyObjectArray[1]], "x": individualData[this.keyObjectArray[0]], "xAxisName": this.keyObjectArray[0], "y1": individualData[this.keyObjectArray[1]][this.subKeyObjectArray[0]], "yAxisName": this.keyObjectArray[1], "y1Name": this.subKeyObjectArray[0], "y2Name": this.subKeyObjectArray[0], "y2": individualData[this.keyObjectArray[1]][this.subKeyObjectArray[1]] })
     this.y.domain([0, d3Array.max(this.allBarData, (d) => d.sum)]);
@@ -129,7 +130,7 @@ export class BarDoubleComponent implements OnInit {
       .attr('x', (d) => this.x(d.x))
       .attr('y', (d) => this.y(maxYValue) + this.y(d.sum))
       .attr('width', 20)
-      .attr('height', (d) => this.y(d.y1))
+      .attr('height', (d) => this.height - this.y(d.y2))
       .attr('fill', '#EDEEF1')
       .on("mousemove", displayTooltip)
       .on("mouseout", hideTooltip);
@@ -145,25 +146,25 @@ export class BarDoubleComponent implements OnInit {
   // For moving chart towards right
   private moveRight() {
     if (this.barsCount + this.start === this.start_max) {
-      this.barsCountRightArrow = false;
+      this.showRightArrow = false;
       return;
     }
     this.start++;
     this.redrawChart();
     if (this.start > 0)
-      this.barsCountLeftArrow = true;
+      this.showLeftArrow = true;
   }
 
   // For moving chart towards left
   private moveLeft() {
     if (this.start === 0) {
-      this.barsCountLeftArrow = false;
+      this.showLeftArrow = false;
       return;
     }
     this.start--;
     this.redrawChart();
     if (this.start < this.start_max)
-      this.barsCountRightArrow = true;
+      this.showRightArrow = true;
   }
 
   //For drawing line and add text at the end of the line
