@@ -22,3 +22,6 @@
     text-align: center;
   }
 
+#barsChanger {
+    position: relative; margin-left: 100px
+}
