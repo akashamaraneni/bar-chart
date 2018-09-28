@@ -15,6 +15,8 @@ import * as d3Axis from 'd3-axis';
 
 export class BarDoubleComponent implements OnInit {
 
+  keyObjectArray: string[];
+  subKeyObjectArray: string[];
   @Input() title = 'Bar Chart';
   @Input() chartWidth = 960;
   @Input() chartHeight = 500;
@@ -39,6 +41,7 @@ export class BarDoubleComponent implements OnInit {
 
   private height: number;
   private width: number;
+  private allBarData = [];
 
   constructor() { }
 
@@ -49,6 +52,8 @@ export class BarDoubleComponent implements OnInit {
 
   private redrawChart() {
     this.data = this.barData.slice(this.start, this.barsCount + this.start);
+    this.keyObjectArray = Object.keys(this.data[0]);
+    this.subKeyObjectArray = Object.keys(this.data[0][this.keyObjectArray[1]])
     this.initSvg();
     this.initAxis();
     this.drawAxis();
@@ -72,11 +77,12 @@ export class BarDoubleComponent implements OnInit {
 
   // For initializing x-axis and y-axis
   private initAxis() {
-    let keyObjectArray = Object.keys(this.data[0]);
     this.x = d3Scale.scaleBand().rangeRound([0, this.width]).padding(0.1).align(0.1);
     this.y = d3Scale.scaleLinear().rangeRound([this.height, 0]);
-    this.x.domain(this.data.map((d) => d[keyObjectArray[0]]));
-    this.y.domain([0, d3Array.max(this.data, (d) => d[keyObjectArray[1]])]);
+    this.x.domain(this.data.map((d) => d[this.keyObjectArray[0]]));
+    for (var individualData of this.data)
+      this.allBarData.push({ "sum": individualData[this.keyObjectArray[1]][this.subKeyObjectArray[0]] + individualData[this.keyObjectArray[1]][this.subKeyObjectArray[1]], "x": individualData[this.keyObjectArray[0]], "xAxisName": this.keyObjectArray[0], "y1": individualData[this.keyObjectArray[1]][this.subKeyObjectArray[0]], "yAxisName": this.keyObjectArray[1], "y1Name": this.subKeyObjectArray[0], "y2Name": this.subKeyObjectArray[0], "y2": individualData[this.keyObjectArray[1]][this.subKeyObjectArray[1]] })
+    this.y.domain([0, d3Array.max(this.allBarData, (d) => d.sum)]);
   }
 
   // To draw the x and y axis lines
@@ -107,31 +113,31 @@ export class BarDoubleComponent implements OnInit {
   private drawBars() {
     let tooltip = d3.select("body").append("div").attr("class", "toolTip");
     let displayTooltip = function (d) {
-      let keyObjectArray = Object.keys(d);
       tooltip
         .style("left", d3.event.pageX - 50 + "px")
         .style("top", d3.event.pageY - 70 + "px")
         .style("display", "inline-block")
-        .html(keyObjectArray[0] + ":" + d[keyObjectArray[0]] + "<br>" + keyObjectArray[1] + ":" + d[keyObjectArray[1]]);
+        .html(d.xAxisName + ":" + d.x + "<br>" + d.yAxisName + ": <br>" + d.y1Name + ":" + d.y1 + ": <br>" + d.y2Name + ":" + d.y2)
     }
     let hideTooltip = function (d) { tooltip.style("display", "none"); }
+    let maxYValue = d3Array.max(this.allBarData, (d) => d.sum);
     let bars = this.g.selectAll('.bar')
-      .data(this.data)
+      .data(this.allBarData)
       .enter().append('g')
       .attr('class', 'bar');
     bars.append("rect").attr('class', 'back')
-      .attr('x', (d) => this.x(d.letter))
-      .attr('y', 0)
+      .attr('x', (d) => this.x(d.x))
+      .attr('y', (d) => this.y(maxYValue) + this.y(d.sum))
       .attr('width', 20)
-      .attr('height', this.height)
+      .attr('height', (d) => this.y(d.y1))
       .attr('fill', '#EDEEF1')
       .on("mousemove", displayTooltip)
       .on("mouseout", hideTooltip);
     bars.append("rect")
-      .attr('x', (d) => this.x(d.letter))
-      .attr('y', (d) => this.y(d.frequency))
+      .attr('x', (d) => this.x(d.x))
+      .attr('y', (d) => this.y(d.y1))
       .attr('width', 20)
-      .attr('height', (d) => this.height - this.y(d.frequency))
+      .attr('height', (d) => this.height - this.y(d.y1))
       .on("mousemove", displayTooltip)
       .on("mouseout", hideTooltip);
   }
