@@ -23,9 +23,10 @@ export class BarDoubleComponent implements OnInit {
   @Input() margin = { top: 0, right: 50, bottom: 0, left: 50 };
   @Input() barData;
   @Input() barsCount = 5;
-  @Input() lineValue
-  @Input() lineText
-  @Input() lineColor
+  @Input() lineValue;
+  @Input() lineText;
+  @Input() lineColor;
+  @Input() barSColor;
 
   private x: any;
   private y: any;
@@ -59,6 +60,7 @@ export class BarDoubleComponent implements OnInit {
     this.drawAxis();
     this.drawBars();
     this.drawLines();
+    this.drawLegends();
   }
 
   // For canvas size
@@ -131,7 +133,7 @@ export class BarDoubleComponent implements OnInit {
       .attr('y', (d) => this.y(maxYValue) + this.y(d.sum))
       .attr('width', 20)
       .attr('height', (d) => this.height - this.y(d.y2))
-      .attr('fill', '#EDEEF1')
+      .attr('fill', this.barSColor[1])
       .on("mousemove", displayTooltip)
       .on("mouseout", hideTooltip);
     bars.append("rect")
@@ -139,6 +141,7 @@ export class BarDoubleComponent implements OnInit {
       .attr('y', (d) => this.y(d.y1))
       .attr('width', 20)
       .attr('height', (d) => this.height - this.y(d.y1))
+      .attr('fill', this.barSColor[0])
       .on("mousemove", displayTooltip)
       .on("mouseout", hideTooltip);
   }
@@ -181,5 +184,28 @@ export class BarDoubleComponent implements OnInit {
       .attr("x", this.width + 5)
       .attr("y", this.lineValue)
       .text(this.lineText)
+  }
+
+  private drawLegends() {
+    let legend = this.g.append("g")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", 10)
+      .attr("text-anchor", "end")
+      .selectAll("g")
+      .data(this.subKeyObjectArray)
+      .enter().append("g")
+      .attr("transform", function (d, i) { return "translate(0," + i * 20 + ")"; });
+    legend.append("text")
+      .attr("x", this.width - 24)
+      .attr("y", 9.5)
+      .attr("dy", "0.32em")
+      .text(function (d) { return d; });
+
+    legend.append("rect")
+      .attr("x", this.width - 19)
+      .attr("width", 19)
+      .attr("height", 19)
+      .data(this.barSColor)
+      .attr("fill", d => d);
   }
 }
