@@ -44,6 +44,8 @@ export class BarDoubleComponent implements OnInit {
   private width: number;
   private allBarData = [];
 
+  private maxYValue: number;
+
   constructor() { }
 
   ngOnInit() {
@@ -70,7 +72,7 @@ export class BarDoubleComponent implements OnInit {
     this.width = this.chartWidth - this.margin.left - this.margin.right + 20;
     this.height = this.chartHeight - this.margin.top - this.margin.bottom;
     this.svg.attr('width', this.width + 50);
-    this.svg.attr('height', this.height + this.margin.top + this.margin.bottom + 20);
+    this.svg.attr('height', this.height + this.margin.top + this.margin.bottom + 40);
     // this.width = +this.svg.attr('width') - this.margin.left - this.margin.right + 20;
     // this.height = 275 - this.margin.top - this.margin.bottom;
     this.g = this.svg.append('g')
@@ -84,8 +86,11 @@ export class BarDoubleComponent implements OnInit {
     this.x.domain(this.data.map((d) => d[this.keyObjectArray[0]]));
     this.allBarData = [];
     for (var individualData of this.data)
-      this.allBarData.push({ "sum": individualData[this.keyObjectArray[1]][this.subKeyObjectArray[0]] + individualData[this.keyObjectArray[1]][this.subKeyObjectArray[1]], "x": individualData[this.keyObjectArray[0]], "xAxisName": this.keyObjectArray[0], "y1": individualData[this.keyObjectArray[1]][this.subKeyObjectArray[0]], "yAxisName": this.keyObjectArray[1], "y1Name": this.subKeyObjectArray[0], "y2Name": this.subKeyObjectArray[0], "y2": individualData[this.keyObjectArray[1]][this.subKeyObjectArray[1]] })
-    this.y.domain([0, d3Array.max(this.allBarData, (d) => d.sum)]);
+      this.allBarData.push({ "x": individualData[this.keyObjectArray[0]], "xAxisName": this.keyObjectArray[0], "y1": individualData[this.keyObjectArray[1]][this.subKeyObjectArray[0]], "yAxisName": this.keyObjectArray[1], "y1Name": this.subKeyObjectArray[0], "y2Name": this.subKeyObjectArray[0], "y2": individualData[this.keyObjectArray[1]][this.subKeyObjectArray[1]] })
+    const y1Max = d3Array.max(this.allBarData, (d) => d.y1);
+    const y2Max = d3Array.max(this.allBarData, d => d.y2);
+    this.maxYValue = (y2Max > y1Max) ? y2Max : y1Max;
+    this.y.domain([0, this.maxYValue]);
   }
 
   // To draw the x and y axis lines
@@ -123,17 +128,17 @@ export class BarDoubleComponent implements OnInit {
         .html(d.xAxisName + ":" + d.x + "<br>" + d.yAxisName + ": <br>" + d.y1Name + ":" + d.y1 + ": <br>" + d.y2Name + ":" + d.y2)
     }
     let hideTooltip = function (d) { tooltip.style("display", "none"); }
-    let maxYValue = d3Array.max(this.allBarData, (d) => d.sum);
+    // let maxYValue = d3Array.max(this.allBarData, (d) => d.sum);
     let bars = this.g.selectAll('.bar')
       .data(this.allBarData)
       .enter().append('g')
       .attr('class', 'bar');
     bars.append("rect").attr('class', 'back')
       .attr('x', (d) => this.x(d.x))
-      .attr('y', (d) => this.y(maxYValue) + this.y(d.sum))
+      .attr('y', 0)
       .attr('width', 20)
-      .attr('height', (d) => this.height - this.y(d.y2))
-      .attr('fill', this.barSColor[1])
+      .attr('height', (d) => this.y(d.y1))
+      .attr('fill', this.barSColor[2])
       .on("mousemove", displayTooltip)
       .on("mouseout", hideTooltip);
     bars.append("rect")
@@ -142,6 +147,22 @@ export class BarDoubleComponent implements OnInit {
       .attr('width', 20)
       .attr('height', (d) => this.height - this.y(d.y1))
       .attr('fill', this.barSColor[0])
+      .on("mousemove", displayTooltip)
+      .on("mouseout", hideTooltip);
+    bars.append("rect").attr('class', 'back')
+      .attr('x', (d) => this.x(d.x) + 22)
+      .attr('y', 0)
+      .attr('width', 20)
+      .attr('height', (d) => this.y(d.y2))
+      .attr('fill', this.barSColor[2])
+      .on("mousemove", displayTooltip)
+      .on("mouseout", hideTooltip);
+    bars.append("rect")
+      .attr('x', (d) => this.x(d.x) + 22)
+      .attr('y', (d) => this.y(d.y2))
+      .attr('width', 20)
+      .attr('height', (d) => this.height - this.y(d.y2))
+      .attr('fill', this.barSColor[1])
       .on("mousemove", displayTooltip)
       .on("mouseout", hideTooltip);
   }
@@ -175,7 +196,7 @@ export class BarDoubleComponent implements OnInit {
     this.g.append('line')
       .attr('x1', 0)
       .attr('y1', this.lineValue)
-      .attr('x2', this.width - 20)
+      .attr('x2', this.width - 30)
       .attr('y2', this.lineValue)
       .attr('stroke', this.lineColor)
     this.g.append('text')
@@ -183,7 +204,7 @@ export class BarDoubleComponent implements OnInit {
       .attr('text-anchor', 'middle')
       .attr("x", this.width + 5)
       .attr("y", this.lineValue)
-      .text(this.lineText)
+      .text(this.lineText +"\n"+ this.lineValue)
   }
 
   private drawLegends() {
@@ -194,15 +215,16 @@ export class BarDoubleComponent implements OnInit {
       .selectAll("g")
       .data(this.subKeyObjectArray)
       .enter().append("g")
-      .attr("transform", function (d, i) { return "translate(0," + i * 20 + ")"; });
+      .attr("transform", function (d, i) { return "translate(" + i * 140 + ",0)"; });
     legend.append("text")
-      .attr("x", this.width - 24)
-      .attr("y", 9.5)
+      .attr("x", this.margin.left + 90)
+      .attr("y", this.height + 25)
       .attr("dy", "0.32em")
       .text(function (d) { return d; });
 
     legend.append("rect")
-      .attr("x", this.width - 19)
+      .attr("x", this.margin.left)
+      .attr("y", this.height + 20)
       .attr("width", 19)
       .attr("height", 19)
       .data(this.barSColor)
